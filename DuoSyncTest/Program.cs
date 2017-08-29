@@ -8,8 +8,10 @@ namespace DuoSyncTest
         static void Main(string[] args)
         {
             List<DuoDevice> allPhones = DuoDevice.GetAllPhones();
-            DataTable dt = DbOperation.CreateDeviceDataTable(allPhones);
-            DbOperation.MergeDeviceTable(dt);
+            DataTable deviceDt = DbOperation.CreateDeviceDataTable(allPhones);
+            DbOperation.MergeDeviceTable(deviceDt);
+            DataTable deviceUserDt = DbOperation.CreateDeviceUserDataTable(allPhones);
+            DbOperation.MergeDeviceUserTable(deviceUserDt);
         }
     }
 }
