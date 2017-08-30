@@ -190,5 +190,89 @@ namespace DuoSyncTest
             }
         }
 
+        public static UpdateDuo GetDeviceNeedToBeAssociateAndDisassociateFromUser()
+        {
+            List<Tuple<string, string>> toBeAdded = new List<Tuple<string, string>>();
+            List<Tuple<string, string>> toBeDeleted = new List<Tuple<string, string>>();
+            try
+            {
+                using (SqlConnection con = new SqlConnection(conStr))
+                {
+                    con.Open();
+
+                    string query = @"
+select dud.duoDeviceID, du.Username, du.duoUserid,max(cast(disassociationFlag as int)) as fll from
+(SELECT duoDeviceID, duo_user.Username, duo_user.PrincipalUsername, disassociationFlag
+  FROM [ECIPortalDev].[dbo].[duo_user_device]
+  inner join duo_user
+  on duo_user_device.Username=duo_user.Username) dud
+  inner join duo_user du
+  on dud.PrincipalUsername=du.PrincipalUsername
+  group by dud.duoDeviceID, du.Username, du.duoUserid
+  except
+  select duoDeviceID, Username, duouserid, disassociationFlag as fll
+  from duo_user_device where disassociationFlag=0
+  except
+  select duoDeviceID, Username, duouserid, disassociationFlag as fll
+  from duo_user_device
+  where disassociationFlag=1
+  order by fll,username
+ ";
+
+                    using (SqlCommand cmd = new SqlCommand(query, con))
+                    {
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader != null)
+                            {
+                                while (reader.Read())
+                                {
+                                    try
+                                    {
+                                        string duoDeviceID = (string)reader["duoDeviceID"];
+                                        string duoUseridduoUserid = (string)reader["duoUserid"];
+                                        int disassociationFlag = (int)reader["fll"];
+                                        if (disassociationFlag == 0)
+                                        {
+                                            toBeAdded.Add(new Tuple<string, string>(duoDeviceID, duoUseridduoUserid));
+                                        }
+                                        else
+                                        {
+                                            toBeDeleted.Add(new Tuple<string, string>(duoDeviceID, duoUseridduoUserid));
+                                        }
+                                    }
+                                    catch (Exception)
+                                    {
+
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    con.Close(); // reader closed and disposed up here
+
+                    UpdateDuo updateDuo = new UpdateDuo();
+                    updateDuo.ToBeAdded = toBeAdded;
+                    updateDuo.ToBeDeleted = toBeDeleted;
+
+                    return updateDuo;
+                } //connection closed and disposed here
+            }
+            catch (SqlException ex)
+            {
+                return null;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+    }
+
+    public class UpdateDuo
+    {
+        public List<Tuple<string, string>> ToBeAdded { get; set; }
+        public List<Tuple<string, string>> ToBeDeleted { get; set; }
     }
 }

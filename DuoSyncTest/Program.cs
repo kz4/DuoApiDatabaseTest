@@ -12,6 +12,7 @@ namespace DuoSyncTest
             DbOperation.MergeDeviceTable(deviceDt);
             DataTable deviceUserDt = DbOperation.CreateDeviceUserDataTable(allPhones);
             DbOperation.MergeDeviceUserTable(deviceUserDt);
+            UpdateDuo updateDuo = DbOperation.GetDeviceNeedToBeAssociateAndDisassociateFromUser();
         }
     }
 }
