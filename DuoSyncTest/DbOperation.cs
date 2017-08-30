@@ -110,7 +110,7 @@ namespace DuoSyncTest
                                       "Target.Platform=Source.Platform, " +
                                       "Target.Type=Source.Type, " +
                                       "Target.SmsPasscodesSent=Source.SmsPasscodesSent " +
-                                      "when not matched then " +
+                                      "when not matched by target then " +
                                       @"insert (Activated
                                   , LastSeen
                                   , Name
@@ -121,7 +121,8 @@ namespace DuoSyncTest
                                   , SmsPasscodesSent) values (
                                 Source.Activated,Source.LastSeen,Source.Name,
                                 Source.Number,Source.Phone_id,Source.Platform,
-                                Source.Type,Source.SmsPasscodesSent);";
+                                Source.Type,Source.SmsPasscodesSent) " +
+                                    "when not matched by source then delete;";
 
                     cmd.CommandText = mergeSql;
                     cmd.ExecuteNonQuery();
@@ -148,6 +149,7 @@ namespace DuoSyncTest
                                                 [duoDeviceID] nvarchar(50)
                                                 , [duoUserID] nvarchar(50)
                                                 , [Username] nvarchar(50)
+                                                , [disassociationFlag] bit
                                                 )", conn);
                     conn.Open();
                     cmd.ExecuteNonQuery();
@@ -165,11 +167,13 @@ namespace DuoSyncTest
                                       "Target.duoUserID=Source.duoUserID " +
                                       "when matched then " +
                                       "update set Target.Username=Source.Username " +
-                                      "when not matched then " +
+                                      "when not matched by target then " +
                                       @"insert ([duoDeviceID]
                                           ,[duoUserID]
-                                          ,[Username]) values (
-                                Source.duoDeviceID,Source.duoUserID,Source.Username);";
+                                          ,[Username]
+                                          ,[disassociationFlag]) values (
+                                Source.duoDeviceID,Source.duoUserID,Source.Username,0)" +
+                                "when not matched by source then update set Target.disassociationFlag=1;";
 
                     cmd.CommandText = mergeSql;
                     cmd.ExecuteNonQuery();
