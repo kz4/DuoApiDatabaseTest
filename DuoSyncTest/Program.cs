@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data;
 
 namespace DuoSyncTest
@@ -12,7 +13,10 @@ namespace DuoSyncTest
             DbOperation.MergeDeviceTable(deviceDt);
             DataTable deviceUserDt = DbOperation.CreateDeviceUserDataTable(allPhones);
             DbOperation.MergeDeviceUserTable(deviceUserDt);
-            UpdateDuo updateDuo = DbOperation.GetDeviceNeedToBeAssociateAndDisassociateFromUser();
+            //UpdateDuo updateDuo = DbOperation.GetDeviceNeedToBeAssociateAndDisassociateFromUser();
+            //DuoDevice.AssociatePhoneWithUser(updateDuo.ToBeAdded);
+            //List<Tuple<string, string, DateTime>> hasBeenDel = DuoDevice.DisassociatePhoneFromUser(updateDuo.ToBeDeleted);
+            //DbOperation.DumpDeletedToDeleteTableAndRemoveThemFromDeviceUserTable(hasBeenDel);
         }
     }
 }

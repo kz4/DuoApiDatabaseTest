@@ -170,10 +170,9 @@ namespace DuoSyncTest
                                       "when not matched by target then " +
                                       @"insert ([duoDeviceID]
                                           ,[duoUserID]
-                                          ,[Username]
-                                          ,[disassociationFlag]) values (
-                                Source.duoDeviceID,Source.duoUserID,Source.Username,0)" +
-                                "when not matched by source then update set Target.disassociationFlag=1;";
+                                          ,[Username]) values (
+                                Source.duoDeviceID,Source.duoUserID,Source.Username)" +
+                                "when not matched by source then delete;";
 
                     cmd.CommandText = mergeSql;
                     cmd.ExecuteNonQuery();
@@ -230,15 +229,15 @@ select dud.duoDeviceID, du.Username, du.duoUserid,max(cast(disassociationFlag as
                                     try
                                     {
                                         string duoDeviceID = (string)reader["duoDeviceID"];
-                                        string duoUseridduoUserid = (string)reader["duoUserid"];
+                                        string duoUserid = (string)reader["duoUserid"];
                                         int disassociationFlag = (int)reader["fll"];
                                         if (disassociationFlag == 0)
                                         {
-                                            toBeAdded.Add(new Tuple<string, string>(duoDeviceID, duoUseridduoUserid));
+                                            toBeAdded.Add(new Tuple<string, string>(duoDeviceID, duoUserid));
                                         }
                                         else
                                         {
-                                            toBeDeleted.Add(new Tuple<string, string>(duoDeviceID, duoUseridduoUserid));
+                                            toBeDeleted.Add(new Tuple<string, string>(duoDeviceID, duoUserid));
                                         }
                                     }
                                     catch (Exception)
@@ -267,6 +266,68 @@ select dud.duoDeviceID, du.Username, du.duoUserid,max(cast(disassociationFlag as
             {
                 return null;
             }
+        }
+
+        public static int DumpDeletedToDeleteTableAndRemoveThemFromDeviceUserTable(List<Tuple<string, string, DateTime>> hasBeenDel)
+        {
+            int i = 0;
+            try
+            {
+                using (SqlConnection con = new SqlConnection(conStr))
+                {
+                    con.Open();
+                    string table = "[duo_user_device_deleted]";
+                    try
+                    {
+                        foreach (var item in hasBeenDel)
+                        {
+                            String query = @"insert into " + table + @"
+([duoDeviceID], [duoUserID], [time]) values
+(@deviceId, @userID, @datetime)";
+
+                            Console.WriteLine(query);
+
+                            using (SqlCommand command = new SqlCommand(query, con))
+                            {
+                                command.CommandType = CommandType.Text;
+                                command.Parameters.AddWithValue("@deviceId", item.Item1);
+                                command.Parameters.AddWithValue("@userID", item.Item2);
+                                command.Parameters.AddWithValue("@datetime", item.Item3);
+                                command.ExecuteNonQuery();
+                            }
+
+                            query = @"delete from " + table + @"
+where [duoDeviceID] = @deviceId, [duoUserID] = @userID";
+
+                            Console.WriteLine(query);
+
+                            using (SqlCommand command = new SqlCommand(query, con))
+                            {
+                                command.CommandType = CommandType.Text;
+                                command.Parameters.AddWithValue("@deviceId", item.Item1);
+                                command.Parameters.AddWithValue("@userID", item.Item2);
+                                command.ExecuteNonQuery();
+                            }
+
+                            i++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("SQL error writing user to duo_user_device_deleted: " + ex.Message + "\n" + ex.InnerException);
+                    }
+                    con.Close();
+                }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine("SQL error writing user to duo_user_device_deleted 2: " + ex.Message + "\n" + ex.InnerException);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("SQL error writing user to duo_user_device_deleted 3: " + ex.Message + "\n" + ex.InnerException);
+            }
+            return i;
         }
     }
 

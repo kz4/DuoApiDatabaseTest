@@ -89,6 +89,67 @@ namespace DuoSyncTest
             return phones;
         }
 
+        /// <summary>
+        /// Associates a device with a user in Duo
+        /// </summary>
+        /// <param name="userID">Duo User ID</param>
+        /// <param name="phoneID">Duo Device ID</param>
+        public static void AssociatePhoneWithUser(List<Tuple<string, string>> toBeAdded)
+        {
+            try
+            {
+                // setup the parameters for a new user
+                var client = new DuoApi(ikeyAuth, skeyAuth, hostAuth);
+                var parameters = new Dictionary<string, string>();
+
+                foreach (var item in toBeAdded)
+                {
+                    string phoneID = item.Item1;
+                    string userID = item.Item2;
+                    parameters["phone_id"] = phoneID;
+
+                    Console.WriteLine("Associating device {0} to User {1} in Duo", phoneID, userID);
+
+                    // Make the rest call to post the new user
+                    var resp = client.JSONApiCall<Dictionary<string, object>>("POST", "/admin/v1/users/" + userID + "/phones", parameters);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Duo Method: AssociateDevice Error: " + ex.Message);
+            }
+        }
+
+        public static List<Tuple<string, string, DateTime>> DisassociatePhoneFromUser(List<Tuple<string, string>> toBeDeleted)
+        {
+            List<Tuple<string, string, DateTime>> hasBeenDeleted = new List<Tuple<string, string, DateTime>>();
+            try
+            {
+
+                // setup the parameters for a new user
+                var client = new DuoApi(ikeyAuth, skeyAuth, hostAuth);
+                var parameters = new Dictionary<string, string>();
+
+                foreach (var item in toBeDeleted)
+                {
+                    string phoneID = item.Item1;
+                    string userID = item.Item2;
+                    parameters["phone_id"] = phoneID;
+
+                    Console.WriteLine("Associating device {0} to User {1} in Duo", phoneID, userID);
+
+                    // Make the rest call to post the new user
+                    var resp = client.JSONApiCall<Dictionary<string, object>>("DELETE", "/admin/v1/users/" + userID + "/phones", parameters);
+                    hasBeenDeleted.Add(new Tuple<string, string, DateTime>(phoneID, userID, DateTime.Now));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Duo Method: DisassociateDevice Error: " + ex.Message);
+            }
+            return hasBeenDeleted;
+        }
+
         #endregion Duo Methods
 
     }

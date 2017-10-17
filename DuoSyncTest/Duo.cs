@@ -261,6 +261,7 @@ namespace DuoSyncTest
             string res = this.ApiCall(method, path, parameters, timeout, date, out statusCode);
 
             var jss = new JavaScriptSerializer();
+            jss.MaxJsonLength = Int32.MaxValue;
 
             try
             {
